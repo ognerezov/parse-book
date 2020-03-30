@@ -53,9 +53,18 @@ function put(params){
 
 }
 
-async function putNumber(number,object){
-    const params = {"Bucket": numbersBucket, "Key": number+'.json', "Body": JSON.stringify(object)};
-    return await put(params);
+// async function putNumber(number,object){
+//     const params = {"Bucket": numbersBucket, "Key": number+'.json', "Body": JSON.stringify(object)};
+//     return await put(params);
+// }
+
+function putNumber(chapter){
+    const params = {"Bucket": numbersBucket, "Key": chapter.number+'.json', "Body": JSON.stringify(chapter)};
+    return put(params);
+}
+
+async function putChapters(chapters){
+    await Promise.all(chapters.map(putNumber))
 }
 
 exports.lambdaHandler = async (event, context) => {
@@ -132,10 +141,11 @@ exports.lambdaHandler = async (event, context) => {
                 const text = match[0].trim();
                 processText(text);
             }
-        }while (match)
-        for(let i=0; i<res.length; i++){
-            console.log(await putNumber(res[i].number,res[i]));
-        }
+        }while (match);
+        await putChapters(res);
+        // for(let i=0; i<res.length; i++){
+        //     console.log(await putNumber(res[i].number,res[i]));
+        // }
         response = {
             'statusCode': 200,
             'body': JSON.stringify({'message':'ok'})
