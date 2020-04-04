@@ -53,10 +53,24 @@ function put(params){
 
 }
 
-// async function putNumber(number,object){
-//     const params = {"Bucket": numbersBucket, "Key": number+'.json', "Body": JSON.stringify(object)};
-//     return await put(params);
-// }
+const admin = require("firebase-admin");
+
+const serviceAccount = require("../everything-book-firebase");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://everything-book.firebaseio.com"
+});
+
+const bookDao = admin.firestore().collection('book');
+
+async function putChapter(chapter) {
+    const key = chapter.number +'';
+    const doc =bookDao.doc(key);
+    const docRef = doc.get();
+    const data = JSON.parse(JSON.stringify(chapter));
+    return (await docRef).exists ? doc.update(data) : doc.create(data);
+}
 
 function putNumber(chapter){
     const params = {"Bucket": numbersBucket, "Key": chapter.number+'.json', "Body": JSON.stringify(chapter)};
@@ -64,7 +78,8 @@ function putNumber(chapter){
 }
 
 async function putChapters(chapters){
-    await Promise.all(chapters.map(putNumber))
+ //   await Promise.all(chapters.map(putNumber))
+    await Promise.all(chapters.map(putChapter))
 }
 
 exports.lambdaHandler = async (event, context) => {
