@@ -98,7 +98,7 @@ exports.lambdaHandler = async (event, context) => {
         if(chapterRegex.test(text)){
             parsed = parseTextAndNumbers (text,num=>currentChapter = new Chapter(num,currentLevel));
             if(levelRecord){
-                currentChapter.addRecord(levelRecord);
+                currentChapter.addRecord(LEVEL,levelRecord.spans);
                 levelRecord = undefined;
             }
             currentChapter.addSpans(parsed);
@@ -158,9 +158,6 @@ exports.lambdaHandler = async (event, context) => {
             }
         }while (match);
         await putChapters(res);
-        // for(let i=0; i<res.length; i++){
-        //     console.log(await putNumber(res[i].number,res[i]));
-        // }
         response = {
             'statusCode': 200,
             'body': JSON.stringify({'message':'ok'})
