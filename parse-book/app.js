@@ -24,10 +24,10 @@ const QUOTATION = 'quotation';
 const POEM = 'poem';
 const REGULAR = 'regular';
 
-function Record(type,spans,level){
+function Record(type,spans,number){
     this.type = type;
     this.spans = spans;
-    this.level = level;
+    this.number = number === undefined ? -1 : number;
 }
 
 function Chapter(number,level){
@@ -36,8 +36,8 @@ function Chapter(number,level){
     this.level = level;
     this.records = [];
 
-    this.addSpans = spans => this.records.push(new Record(CHAPTER,spans,this.level));
-    this.addRecord = (type,spans)=>this.records.push(new Record(type,spans,this.level))
+    this.addSpans = spans => this.records.push(new Record(CHAPTER,spans,this.number));
+    this.addRecord = (type,spans)=>this.records.push(new Record(type,spans,this.number))
 }
 
 function put(params){
@@ -92,7 +92,7 @@ exports.lambdaHandler = async (event, context) => {
 
         if(levelRegex.test(text)) {
             parsed =parseTextAndNumbers (text,num=>currentLevel=num);
-            levelRecord = new Record(LEVEL,parsed,currentLevel);
+            levelRecord = new Record(LEVEL,parsed);
             return LEVEL;
         }
         if(chapterRegex.test(text)){
