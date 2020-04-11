@@ -10,11 +10,12 @@ const poemRegex = /\s+[^\d]*\)$/
 const levelRegex = /^Уровень.*|Уровень.*/
 const ruleRegex=/Принцип:.*/
 const regularRegex =/[\D].*/
+const ruleFinish = /_+/
 
 const textParseRegex =/\D+|\d+/g
 const numberRegex =/\d+/
 
-const allRegex=/^\d*\..*\n|\n\d*\..*\n|\d*.=.*\n|.*\)\n|^Уровень.*|\nУровень.*|\n\s+[^\d]*\)|Принцип:.*|[\D].*/g
+const allRegex=/^\d*\..*\n|\n\d*\..*\n|\d*.=.*\n|.*\)\n|^Уровень.*|\nУровень.*|\n\s+[^\d]*\)|Принцип:.*|_+|[\D].*/g
 
 const LEVEL = 'level';
 const CHAPTER = 'chapter';
@@ -23,6 +24,7 @@ const RULE = 'rule';
 const QUOTATION = 'quotation';
 const POEM = 'poem';
 const REGULAR = 'regular';
+const RULE_BODY='rule body';
 
 function Record(type,spans,number){
     this.type = type;
@@ -63,6 +65,7 @@ admin.initializeApp({
 });
 
 const bookDao = admin.firestore().collection('book');
+const ruleDao = admin.firestore().collection("rules");
 
 async function putChapter(chapter) {
     const key = chapter.number +'';
@@ -87,7 +90,8 @@ exports.lambdaHandler = async (event, context) => {
     let currentChapter;
     const res = [];
     let levelRecord;
-    function processText(text) {
+    let rule;
+    async function processText(text) {
         let parsed;
 
         if(levelRegex.test(text)) {
@@ -111,6 +115,16 @@ exports.lambdaHandler = async (event, context) => {
         }
         if(ruleRegex.test(text)){
             currentChapter.addRecord(RULE,parseTextAndNumbers(text));
+            rule = [text];
+            return RULE;
+        }
+        if(ruleFinish.test(text)){
+         //   currentChapter.addRecord(RULE,parseTextAndNumbers(rule));
+            const doc = ruleDao.doc(rule[0]);
+            const docRef = doc.get();
+            (await docRef).exists ? doc.update({'rule':rule}) : doc.create({'rule':rule})
+            //ruleDao.add({'rule':rule});
+            rule = undefined;
             return RULE;
         }
         if(quotationRegex.test(text)) {
@@ -121,7 +135,14 @@ exports.lambdaHandler = async (event, context) => {
             currentChapter.addRecord(POEM,parseTextAndNumbers(text));
             return POEM;
         }
-        currentChapter.addRecord(REGULAR,parseTextAndNumbers(text));
+
+        if(rule && text){
+            rule.push(text);
+            currentChapter.addRecord(RULE_BODY,parseTextAndNumbers(text));
+        }else {
+            currentChapter.addRecord(REGULAR,parseTextAndNumbers(text));
+        }
+
         return REGULAR;
     }
 
@@ -154,7 +175,7 @@ exports.lambdaHandler = async (event, context) => {
             match= allRegex.exec(text);
             if(match) {
                 const text = match[0].trim();
-                processText(text);
+                await processText(text);
             }
         }while (match);
         await putChapters(res);
