@@ -119,11 +119,12 @@ exports.lambdaHandler = async (event, context) => {
             return RULE;
         }
         if(ruleFinish.test(text)){
-         //   currentChapter.addRecord(RULE,parseTextAndNumbers(rule));
             const doc = ruleDao.doc(rule[0]);
             const docRef = doc.get();
-            (await docRef).exists ? doc.update({'rule':rule}) : doc.create({'rule':rule})
-            //ruleDao.add({'rule':rule});
+            const obj = {
+                'rule':rule,
+                'number': currentChapter.number};
+            (await docRef).exists ? doc.update(obj) : doc.create(obj);
             rule = undefined;
             return RULE;
         }
