@@ -3,7 +3,7 @@ const AWS = require('aws-sdk')
 const s3 = new AWS.S3()
 const numbersBucket = 'everything-numbers';
 
-const chapterRegex =/\d+\..*/
+const chapterRegex =/^\d+\..*/
 const formulaRegex=/\d+.=.*/
 const quotationRegex = /^[^\s]+.*\)$/
 const poemRegex = /\s+[^\d]*\)$/
@@ -174,9 +174,12 @@ exports.lambdaHandler = async (event, context) => {
         let match;
         do{
             match= allRegex.exec(text);
+
             if(match) {
                 const text = match[0].trim();
-                await processText(text);
+                if(text){
+                    await processText(text);
+                }
             }
         }while (match);
         await putChapters(res);
