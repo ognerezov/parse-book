@@ -6,7 +6,8 @@ const numbersBucket = 'everything-numbers';
 const chapterRegex =/^\d+\..*/
 const formulaRegex=/\d+.=.*/
 const quotationRegex = /^[^\s]+.*\)$/
-const poemRegex = /\s+[^\d]*\)$/
+//const poemRegex = /\s+[^\d]*\)$/
+const poemRegex = /\t[\s\S]*\)\n/
 const levelRegex = /^Уровень.*|Уровень.*/
 const ruleRegex=/Принцип:.*/
 const regularRegex =/[\D].*/
@@ -15,7 +16,8 @@ const ruleFinish = /_+/
 const textParseRegex =/\D+|\d+/g
 const numberRegex =/\d+/
 
-const allRegex=/^\d*\..*\n|\n\d*\..*\n|\d*.=.*\n|.*\)\n|^Уровень.*|\nУровень.*|\n\s+[^\d]*\)|Принцип:.*|_+|[\D].*/g
+//const allRegex=/^\d*\..*\n|\n\d*\..*\n|\d*.=.*\n|.*\)\n|^Уровень.*|\nУровень.*|\n\s+[^\d]*\)|Принцип:.*|_+|[\D].*/g
+const allRegex=/^\d*\..*\n|\n\d*\..*\n|\d*.=.*\n|.*\)\n|^Уровень.*|\nУровень.*|\t[\s\S]*\)\n|Принцип:.*|_+|\w*.*\n/g
 
 const LEVEL = 'level';
 const CHAPTER = 'chapter';
@@ -176,7 +178,7 @@ exports.lambdaHandler = async (event, context) => {
             match= allRegex.exec(text);
 
             if(match) {
-                const text = match[0].trim();
+                const text = poemRegex.test(match[0]) ? match[0] : match[0].trim();
                 if(text){
                     await processText(text);
                 }
