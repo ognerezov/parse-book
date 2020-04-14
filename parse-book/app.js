@@ -4,7 +4,7 @@ const s3 = new AWS.S3()
 const numbersBucket = 'everything-numbers';
 
 const chapterRegex =/^\d+\..*/
-const formulaRegex=/\d+.=.*/
+const formulaRegex=/^\d+.=.*/
 const quotationRegex = /^[^\s]+.*\)$/
 //const poemRegex = /\s+[^\d]*\)$/
 const poemRegex = /\t[\s\S]*\)\n/
@@ -12,6 +12,7 @@ const levelRegex = /^Уровень.*|Уровень.*/
 const ruleRegex=/Принцип:.*/
 const regularRegex =/[\D].*/
 const ruleFinish = /_+/
+const resultRegex =/Уровень.*,/
 
 const textParseRegex =/\D+|\d+/g
 const numberRegex =/\d+/
@@ -27,6 +28,7 @@ const QUOTATION = 'quotation';
 const POEM = 'poem';
 const REGULAR = 'regular';
 const RULE_BODY='rule body';
+const RESULT = 'result';
 
 function Record(type,spans,number){
     this.type = type;
@@ -96,6 +98,10 @@ exports.lambdaHandler = async (event, context) => {
     async function processText(text) {
         let parsed;
 
+        if(resultRegex.test(text)) {
+            currentChapter.addRecord(RESULT,parseTextAndNumbers(text));
+            return RESULT;
+        }
         if(levelRegex.test(text)) {
             parsed =parseTextAndNumbers (text,num=>currentLevel=num);
             levelRecord = new Record(LEVEL,parsed);
