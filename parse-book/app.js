@@ -3,6 +3,10 @@ const AWS = require('aws-sdk')
 const s3 = new AWS.S3()
 const numbersBucket = 'everything-numbers';
 
+const ELASTICSEARCH_URL = 'http://localhost:9200';
+const { Client } = require('@elastic/elasticsearch')
+const client = new Client({ node: ELASTICSEARCH_URL })
+
 const chapterRegex =/^\d+\..*/
 const formulaRegex=/^\d+.=.*/
 const quotationRegex = /^[^\s]+.*\)$/
@@ -30,6 +34,7 @@ const REGULAR = 'regular';
 const RULE_BODY='rule body';
 const RESULT = 'result';
 
+
 function Record(type,spans,number){
     this.type = type;
     this.spans = spans;
@@ -45,6 +50,7 @@ function Chapter(number,level){
     this.addSpans = spans => this.records.push(new Record(CHAPTER,spans,this.number));
     this.addRecord = (type,spans)=>this.records.push(new Record(type,spans,this.number))
 }
+
 
 function put(params){
     return new Promise((resolve, reject) => {
@@ -71,6 +77,14 @@ admin.initializeApp({
 const bookDao = admin.firestore().collection('book');
 const ruleDao = admin.firestore().collection("rules");
 
+async function elasticsearchCreate(chapter) {
+    return client.index({
+        id : chapter.number +'',
+        index : 'book',
+        body : chapter
+    })
+}
+
 async function putChapter(chapter) {
     const key = chapter.number +'';
     const doc =bookDao.doc(key);
@@ -87,6 +101,7 @@ function putNumber(chapter){
 async function putChapters(chapters){
  //   await Promise.all(chapters.map(putNumber))
     await Promise.all(chapters.map(putChapter))
+ //   await Promise.all(chapters.map(elasticsearchCreate))
 }
 
 exports.lambdaHandler = async (event, context) => {
