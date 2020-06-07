@@ -3,9 +3,14 @@ const AWS = require('aws-sdk')
 const s3 = new AWS.S3()
 const numbersBucket = 'everything-numbers';
 
-const ELASTICSEARCH_URL = 'http://localhost:9200';
+const ELASTICSEARCH_URL = 'url';
 const { Client } = require('@elastic/elasticsearch')
-const client = new Client({ node: ELASTICSEARCH_URL })
+const client = new Client({ node: ELASTICSEARCH_URL,
+    auth: {
+        username: 'username',
+        password: 'password'
+    }
+})
 
 const chapterRegex =/^\d+\..*/
 const formulaRegex=/^\d+.=.*/
@@ -85,6 +90,14 @@ async function elasticsearchCreate(chapter) {
     })
 }
 
+async function elasticsearchRule(obj){
+    return client.index({
+        id : obj.rule[0],
+        index : 'rules',
+        body : obj
+    })
+}
+
 async function putChapter(chapter) {
     const key = chapter.number +'';
     const doc =bookDao.doc(key);
@@ -100,8 +113,8 @@ function putNumber(chapter){
 
 async function putChapters(chapters){
  //   await Promise.all(chapters.map(putNumber))
-    await Promise.all(chapters.map(putChapter))
- //   await Promise.all(chapters.map(elasticsearchCreate))
+    //await Promise.all(chapters.map(putChapter))
+    await Promise.all(chapters.map(elasticsearchCreate))
 }
 
 exports.lambdaHandler = async (event, context) => {
@@ -147,12 +160,13 @@ exports.lambdaHandler = async (event, context) => {
             const obj = {
                 'rule':rule,
                 'number': currentChapter.number};
-            (await docRef).exists ? doc.update(obj) : doc.create(obj);
+           // (await docRef).exists ? doc.update(obj) : doc.create(obj);
+            await elasticsearchRule(obj);
             rule = undefined;
             return RULE;
         }
         if(quotationRegex.test(text)) {
-            currentChapter.addRecord(QUOTATION,parseTextAndNumbers(text));
+            currentChapter.addRecord(QUOTATION,parseTextAndNumbers(text.replace(/\(\*\)/g,'')));
             return QUOTATION;
         }
         if(poemRegex.test(text)) {
@@ -193,18 +207,24 @@ exports.lambdaHandler = async (event, context) => {
     }
 
     try {
-        const text = event.text;
-        let match;
-        do{
-            match= allRegex.exec(text);
+        const texts = event.texts ? event.texts : [];
+        //const text = event.text;
+        if (event.text) {
+            texts.unshift(event.text);
+        }
+        for(let text of texts) {
+            let match;
+            do {
+                match = allRegex.exec(text);
 
-            if(match) {
-                const text = poemRegex.test(match[0]) ? match[0] : match[0].trim();
-                if(text){
-                    await processText(text);
+                if (match) {
+                    const text = poemRegex.test(match[0]) ? match[0] : match[0].trim();
+                    if (text) {
+                        await processText(text);
+                    }
                 }
-            }
-        }while (match);
+            } while (match);
+        }
         await putChapters(res);
         response = {
             'statusCode': 200,
