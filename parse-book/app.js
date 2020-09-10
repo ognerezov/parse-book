@@ -3,12 +3,12 @@ const AWS = require('aws-sdk')
 const s3 = new AWS.S3()
 const numbersBucket = 'everything-numbers';
 
-const ELASTICSEARCH_URL = 'url';
+const ELASTICSEARCH_URL = 'http://52.169.202.50:9200';
 const { Client } = require('@elastic/elasticsearch')
 const client = new Client({ node: ELASTICSEARCH_URL,
     auth: {
-        username: 'username',
-        password: 'password'
+        username: 'elastic',
+        password: 'FRdGaxskLFklEssQ1ca7'
     }
 })
 
