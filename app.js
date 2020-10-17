@@ -152,8 +152,8 @@ exports.lambdaHandler = async (event, context) => {
             return RULE;
         }
         if(ruleFinish.test(text)){
-            const doc = ruleDao.doc(rule[0]);
-            const docRef = doc.get();
+            // const doc = ruleDao.doc(rule[0]);
+            // const docRef = doc.get();
             const obj = {
                 'rule':rule,
                 'number': currentChapter.number};
