@@ -10,7 +10,7 @@
     "@elastic/elasticsearch": "^7.6.1",
     "aws-sdk": "^2.648.0",
     "axios": "^0.18.0",
-    "firebase-admin": "^8.10.0"
+    "firebase-admin": "^11.4.1"
   },
   "scripts": {
     "test": "mocha tests/unit/"
