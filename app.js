@@ -122,7 +122,7 @@ exports.lambdaHandler = async (event, context) => {
     let rule;
     async function processText(text) {
         let parsed;
-
+        console.log(text)
         if(resultRegex.test(text)) {
             currentChapter.addRecord(RESULT,parseTextAndNumbers(text));
             return RESULT;
